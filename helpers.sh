@@ -14,6 +14,20 @@ __prompt_install_nvm(){
   fi
 }
 
+__prompt_install_meteor(){
+  log_status "Couldn't find meteor..."
+  read -p "Should I install it? " -n 1 -r
+  echo    # (optional) move to a new line
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    log_status "Installing, this will take awhile."
+    curl https://install.meteor.com/ | sh
+  else
+    log_error "Install meteor and try again"
+    log_status "To install NVM visit https://www.meteor.com/install"
+    exit
+  fi
+}
+
 
 __npm_install_and_layout(){
   if [ ! -d ./node_modules ]; then
@@ -113,4 +127,17 @@ requires_themekit(){
     brew tap shopify/shopify
     brew install themekit
   fi
+}
+
+requires_meteor(){
+  if has meteor; then
+    if [ ! -d ./node_modules ]; then
+      # no node modules... run meteor npm install
+      log_status "Running npm install"
+      meteor npm install
+    fi
+  else
+    __prompt_install_meteor
+  fi
+  log_status "Good to go, Meteor installed"
 }
