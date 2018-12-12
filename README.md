@@ -15,7 +15,7 @@
 
 ```
 # download the script
-curl -o- https://raw.githubusercontent.com/steve-ross/direnv-helpers/helpers.sh >> ~/helpers.sh
+curl -o- https://raw.githubusercontent.com/steve-ross/direnv-helpers/master/helpers.sh >> ~/helpers.sh
 
 # source it in your .direnvrc
 echo -n "source ~/helpers.sh" >> ~/.direnvrc
