@@ -152,6 +152,19 @@ requires_stencil(){
   
 }
 
+requires_envkey(){
+  if has envkey-source; then
+    _log warn "Found envkey... trying to source .env"
+    eval $(envkey-source)
+    _log success "EnvKey Loaded"
+  else
+    _log warn "Installing EnvKey cli"
+    curl -s https://raw.githubusercontent.com/envkey/envkey-source/master/install.sh | bash
+    eval $(envkey-source)
+  fi
+  
+}
+
 requires_themekit(){
   if has theme; then
     _log success "Found shopify themekit"
