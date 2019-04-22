@@ -5,6 +5,7 @@
 - Detect & install BigCommerce's stencil-cli
 - Detect & install Meteor
 - Detect & install Shopify's themekit
+- Detect & install EnvKey (and call envkey-source)
 - Node / NVM specific helpers
   - Use the node version required by your project (if missing, install it with NVM)
   - Run npm install if you are missing a `node_modules`
@@ -47,4 +48,5 @@ requires_nvm
 requires_stencil
 requires_themekit
 requires_meteor
+requires_envkey
 ```
