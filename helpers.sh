@@ -28,6 +28,12 @@ __prompt_install_meteor(){
   fi
 }
 
+__npm_install(){
+  if [ ! -d ./node_modules ]; then
+    # no node modules... run npm install
+    npm install
+  fi
+}
 
 __npm_install_and_layout(){
   if [ ! -d ./node_modules ]; then
@@ -35,11 +41,11 @@ __npm_install_and_layout(){
     npm install
   fi
 
-  if [ -d node_modules/.bin ]; then
-    # apply direnv's layout node so stuff in ./node_modules/.bin
-    # acts like it is global
-    layout_node
-  fi
+  # if [ -d node_modules/.bin ]; then
+  #   # apply direnv's layout node so stuff in ./node_modules/.bin
+  #   # acts like it is global
+  #   layout_node
+  # fi
 }
 
 __source_nvm(){
@@ -87,7 +93,7 @@ __nvm_use_or_install_version(){
   local nvmrc_node_version=$(nvm version "$version")
   if [ "$nvmrc_node_version" = "N/A" ]; then
     _log warn "Installing missing node version"
-    local install_output=$(nvm install "$version")
+    local install_output=$(nvm install "$version" --latest-npm)
   fi
   nvm use
 }
@@ -130,7 +136,7 @@ requires_nvm(){
   __load_or_install_nvm
   __nvm_use_or_install_version
   __direnv_nvm_use_node
-  __npm_install_and_layout
+  __npm_install
 }
 
 __config_or_init_stencil(){
