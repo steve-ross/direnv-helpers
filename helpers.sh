@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+
+# Release Notes 
+#   Version 0.0.3 
+#     - bugfix for when .nvmrc contains a release name ie: 'lts/dubnium'
+#   Version 0.0.2 
+#     - don't assume 'layout node' when using node
+#   Version 0.0.1 
+#     - Initial release
+
 __prompt_install_nvm(){
   _log warn "Couldn't find nvm (node version manager)..."
   read -p "Should I install it? " -n 1 -r
