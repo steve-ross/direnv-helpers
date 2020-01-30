@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+
+# Release Notes 
+#   Version 0.0.3 
+#     - bugfix for when .nvmrc contains a release name ie: 'lts/dubnium'
+#   Version 0.0.2 
+#     - don't assume 'layout node' when using node
+#   Version 0.0.1 
+#     - Initial release
+
 __prompt_install_nvm(){
   _log warn "Couldn't find nvm (node version manager)..."
   read -p "Should I install it? " -n 1 -r
@@ -68,8 +77,9 @@ __direnv_nvm_use_node(){
     local NVM_PATH=$(find_up .nvm/nvm.sh)
     # load version direnv way
     local NVM_NODE_VERSION_DIR=versions/node
-    local NODE_VERSION=$(< .nvmrc)
-
+    local NODE_VERSION=$(nvm current)
+    NODE_VERSION=${NODE_VERSION//[!0-9\.]/}
+    
     # two possible locations for node versions in nvm...
     local ALT_NVM_PATH="${NVM_PATH/\/nvm.sh}"
     local TYPICAL_NVM_PATH="${NVM_PATH/nvm.sh/$NVM_NODE_VERSION_DIR}"
@@ -85,7 +95,7 @@ __direnv_nvm_use_node(){
     export NODE_VERSIONS=$NVM_PATH
     export NODE_VERSION_PREFIX="v"
     
-    use node
+    use node $NODE_VERSION
 }
 
 __nvm_use_or_install_version(){
