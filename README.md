@@ -15,11 +15,15 @@
 ## Installation
 
 ```
-# download the script
-curl -o- https://raw.githubusercontent.com/steve-ross/direnv-helpers/master/helpers.sh >> ~/helpers.sh
+# one liner
+curl -o ~/.config/direnv/helpers.sh --create-dirs https://raw.githubusercontent.com/steve-ross/direnv-helpers/master/helpers.sh && echo -n "source ~/.config/direnv/helpers.sh >> ~/.config/direnv/direnvrc
 
-# source it in your .direnvrc
-echo -n "source ~/helpers.sh" >> ~/.direnvrc
+# OR...
+# download the script
+curl -o ~/.config/direnv/helpers.sh --create-dirs https://raw.githubusercontent.com/steve-ross/direnv-helpers/master/helpers.sh
+
+# source it in your ~/.config/direnv/direnvrc
+echo -n "source ~/.config/direnv/helpers.sh >> ~/.config/direnv/direnvrc
 ```
 
 ## How to use the helpers in your projects (NVM example)
