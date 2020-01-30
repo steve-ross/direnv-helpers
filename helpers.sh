@@ -68,8 +68,9 @@ __direnv_nvm_use_node(){
     local NVM_PATH=$(find_up .nvm/nvm.sh)
     # load version direnv way
     local NVM_NODE_VERSION_DIR=versions/node
-    local NODE_VERSION=$(< .nvmrc)
-
+    local NODE_VERSION=$(nvm current)
+    NODE_VERSION=${NODE_VERSION//[!0-9\.]/}
+    
     # two possible locations for node versions in nvm...
     local ALT_NVM_PATH="${NVM_PATH/\/nvm.sh}"
     local TYPICAL_NVM_PATH="${NVM_PATH/nvm.sh/$NVM_NODE_VERSION_DIR}"
@@ -85,7 +86,7 @@ __direnv_nvm_use_node(){
     export NODE_VERSIONS=$NVM_PATH
     export NODE_VERSION_PREFIX="v"
     
-    use node
+    use node $NODE_VERSION
 }
 
 __nvm_use_or_install_version(){
