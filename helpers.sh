@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 # Release Notes 
+#   Version 0.0.4 
+#     - detect yarn.lock vs package-lock.json and install yarn if needed
 #   Version 0.0.3 
 #     - bugfix for when .nvmrc contains a release name ie: 'lts/dubnium'
 #   Version 0.0.2 
@@ -35,26 +37,6 @@ __prompt_install_meteor(){
     _log warn "To install NVM visit https://www.meteor.com/install"
     exit
   fi
-}
-
-__npm_install(){
-  if [ ! -d ./node_modules ]; then
-    # no node modules... run npm install
-    npm install
-  fi
-}
-
-__npm_install_and_layout(){
-  if [ ! -d ./node_modules ]; then
-    # no node modules... run npm install
-    npm install
-  fi
-
-  # if [ -d node_modules/.bin ]; then
-  #   # apply direnv's layout node so stuff in ./node_modules/.bin
-  #   # acts like it is global
-  #   layout_node
-  # fi
 }
 
 __source_nvm(){
@@ -146,7 +128,46 @@ requires_nvm(){
   __load_or_install_nvm
   __nvm_use_or_install_version
   __direnv_nvm_use_node
-  __npm_install
+  __requires_npm_or_yarn
+}
+
+__use_yarn(){
+  local NOT_INSTALLED=$(which yarn)
+  if [ -z "$NOT_INSTALLED" ]; then
+    _log info "Couldn't find yarn..."
+    read -p "Should I install it via homebrew? " -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      _log info "Installing yarn via brew"
+      brew install yarn
+    else
+      log_error "Install yarn and try again"
+      exit
+    fi
+  else
+    if [ ! -d ./node_modules ]; then
+      # no node modules... install via yarn
+      yarn
+    fi
+    _log success "Good to go, 'yarn start' for local development"
+  fi
+}
+
+__requires_npm_or_yarn(){
+  if [[ -f "yarn.lock" && -f "package-lock.json" ]]; then
+    # project misconfigured... has both package-lock.json and yarn.lock
+    _log error "ERROR! This project has both a package-lock.json (npm install) and a yarn.lock (yarn)"
+    _log warn "Exiting... you should remove one or the other and settle on one package manager"
+  else
+    if [ -f "yarn.lock" ]; then
+      __use_yarn
+    else
+      if [ ! -d ./node_modules ]; then
+        # no node modules... run npm install
+        npm install
+      fi
+    fi
+  fi
 }
 
 __config_or_init_stencil(){
