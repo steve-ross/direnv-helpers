@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 
 # Release Notes 
+#   Version 0.1.0
+#     - check for updates and download when a new release is available
+#       - writes version string to .helpers-version in the same directory as helpers.sh
+#       - only check for a new version every 24h
+#     - added auto=detecting project types
+#         - look for .nvmrc and assume project is using nvm
+#         - look for .meteor directory and assume project is using meteor
+#     - don't call nvm use since direnv is loading node
+#     - abandon using log_error... just call _log error "something bad happened..."
 #   Version 0.0.4 
 #     - detect yarn.lock vs package-lock.json and install yarn if needed
 #   Version 0.0.3 
@@ -10,8 +19,11 @@
 #   Version 0.0.1 
 #     - Initial release
 
+
+REPO_URL="https://api.github.com/repos/steve-ross/direnv-helpers/releases/latest"
+
 __prompt_install_nvm(){
-  _log warn "Couldn't find nvm (node version manager)..."
+  _log prompt "Couldn't find nvm (node version manager)..."
   read -p "Should I install it? " -n 1 -r
   echo    # (optional) move to a new line
   if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -19,21 +31,21 @@ __prompt_install_nvm(){
     curl -o- https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
     __source_nvm # make sure nvm is sourced
   else
-    log_error "Install nvm first and make sure it is in your path and try again"
+    _log error "Install nvm first and make sure it is in your path and try again"
     _log warn "To install NVM visit https://github.com/creationix/nvm#installation"
     exit
   fi
 }
 
 __prompt_install_meteor(){
-  _log info "Couldn't find meteor..."
+  _log prompt "Couldn't find meteor..."
   read -p "Should I install it? " -n 1 -r
-  echo    # (optional) move to a new line
+  echo    # move to a new line
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     _log info "Installing, this will take awhile."
     curl https://install.meteor.com/ | sh
   else
-    log_error "Install meteor and try again"
+    _log error "Install meteor and try again"
     _log warn "To install NVM visit https://www.meteor.com/install"
     exit
   fi
@@ -57,26 +69,24 @@ __load_or_install_nvm(){
 
 __direnv_nvm_use_node(){
     local NVM_PATH=$(find_up .nvm/nvm.sh)
-    # load version direnv way
-    local NVM_NODE_VERSION_DIR=versions/node
-    local NODE_VERSION=$(nvm current)
-    NODE_VERSION=${NODE_VERSION//[!0-9\.]/}
+    NVM_PATH="${NVM_PATH/\/nvm.sh/}"
+    local NODE_VERSION=$(< .nvmrc)
     
-    # two possible locations for node versions in nvm...
-    local ALT_NVM_PATH="${NVM_PATH/\/nvm.sh}"
-    local TYPICAL_NVM_PATH="${NVM_PATH/nvm.sh/$NVM_NODE_VERSION_DIR}"
-    
-    # set the nvm path to the typical place NVM stores node versions
-    local NVM_PATH="$TYPICAL_NVM_PATH"
-
-    #check alt path (seems old versions are here)
-    if [ -d "$ALT_NVM_PATH/v$NODE_VERSION" ]; then
-      NVM_PATH="$ALT_NVM_PATH"
+    # if the version id is an alias cat the file for the version
+    if [ -f "$NVM_PATH/alias/$NODE_VERSION" ]; then
+      NODE_VERSION=$(< $NVM_PATH/alias/$NODE_VERSION)
     fi
 
-    export NODE_VERSIONS=$NVM_PATH
+    # remove 'v' prefix for direnv 
+    NODE_VERSION="${NODE_VERSION/v/}" 
+    export NODE_VERSIONS="${NVM_PATH}/versions/node"
     export NODE_VERSION_PREFIX="v"
     
+
+    if [ "$nvmrc_node_version" = "N/A" ]; then
+      _log warn "Installing missing node version"
+      local install_output=$(nvm install "$version" --latest-npm)
+    fi
     use node $NODE_VERSION
 }
 
@@ -87,7 +97,6 @@ __nvm_use_or_install_version(){
     _log warn "Installing missing node version"
     local install_output=$(nvm install "$version" --latest-npm)
   fi
-  nvm use
 }
 
 _log() {
@@ -95,10 +104,12 @@ _log() {
   local color_normal
   local color_success
   
-  color_normal=$(tput sgr0)
-  color_success=$(tput setaf 2)
-  color_warn=$(tput setaf 3)
-  color_info=$(tput setaf 5)
+  color_normal=$(tput sgr0;)
+  color_error=$(tput setaf 1;)
+  color_success=$(tput bold; tput setaf 2;)
+  color_warn=$(tput setaf 3;)
+  color_info=$(tput setaf 6;)
+  color_prompt=$(tput bold;)
 
   # default color
   current_color="${color_normal}"
@@ -116,6 +127,13 @@ _log() {
     if [ "$message_type" = "success" ]; then
       current_color="${color_success}"
     fi
+    if [ "$message_type" = "error" ]; then
+      current_color="${color_error}"
+    fi
+    if [ "$message_type" = "prompt" ]; then
+      current_color="${color_info}"
+      color_normal="${color_prompt}"
+    fi
   fi
 
   if [[ -n $DIRENV_LOG_FORMAT ]]; then
@@ -124,24 +142,105 @@ _log() {
   fi
 }
 
+function comparedate() {
+  local MAXAGE=$(bc <<< '24*60*60') # seconds in 24 hours
+  # file age in seconds = current_time - file_modification_time.
+  local FILEAGE=$(($(date +%s) - $(stat -f '%m' "$1")))
+  test $FILEAGE -gt $MAXAGE && {
+      echo "Time to check for an update..."
+  }
+}
+
+function getLatestVersion(){
+  local NEW_VERSION="$(curl -s $REPO_URL | grep tag_name | cut -d'v' -f2 | cut -d'"' -f1)"
+  # if it doesn't exist create it and set it to the latest version
+  local CONFIG_FILE=$1
+  if [ ! -f $CONFIG_FILE ]; then
+    echo -n "$NEW_VERSION" > $CONFIG_FILE
+  fi
+
+  local CUR_VERSION="$(cat $CONFIG_FILE)"
+
+  if [ -z "$CUR_VERSION" ];then
+    # blank version... assume it's the first selfupdate version
+    # (we'll check for another ) update in 24h so not a big deal
+    CUR_VERSION=$NEW_VERSION
+    echo -n "$CUR_VERSION" > $CONFIG_FILE
+  fi
+
+  
+  # if [ "$NEW_VERSION" != "$CUR_VERSION" ]; then
+  if [ "$NEW_VERSION" != "$CUR_VERSION" ]; then
+    _log info "Updating helper to latest version $NEW_VERSION"
+    # help on update/download
+    # https://gist.github.com/steinwaywhw/a4cd19cda655b8249d908261a62687f8#gistcomment-2754696
+    local target_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+    pushd /tmp/
+    local file_url=$(curl -s $REPO_URL | grep "tarball_url" | cut -d'"' -f4)
+    _log info $file_url
+    local tarball="${NEW_VERSION}.tar.gz"
+    _log warn $tarball
+    curl -L --silent $file_url > $tarball
+    mkdir $NEW_VERSION
+    tar -xzf $tarball -C $NEW_VERSION
+    local new_file="$(find ./${NEW_VERSION} -name "*.sh" 2>/dev/null)"
+
+    _log info "Target dir ${target_dir}"
+    # replace current script file
+    mv -f $new_file $target_dir
+    rm -rf $NEW_VERSION
+    # update the version file
+    echo -n "$NEW_VERSION" > $CONFIG_FILE
+    echo $NEW_VERSION
+  else
+    # touch our config file so we don't re-run our update
+    touch $CONFIG_FILE
+  fi
+}
+
+
+__check_for_update(){
+  local THIS_SCRIPT=${BASH_SOURCE[0]}
+  local ARGS="$@"
+  SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  local CONFIG_FILE="$SCRIPT_DIR/.helpers-version"
+  
+  # if there is no version file create it with the latest release
+  if [ ! -f $CONFIG_FILE ]; then
+    getLatestVersion $CONFIG_FILE
+  else
+    # we have a version so see if we need to check (we'll check every 24h)
+    local CHECK_FOR_UPDATE=$(comparedate $CONFIG_FILE)
+    
+    if [ ! -z "$CHECK_FOR_UPDATE" ];then
+      _log info "Checking for update..."
+      local NEW_VERSION=$(getLatestVersion $CONFIG_FILE)
+      
+      # if getLatestVersion returns a new version (var isn't empty)
+      if [ ! -z "$NEW_VERSION" ];then
+        _log success "Updated to latest version"
+        echo "UPDATED"
+      fi
+    fi
+  fi
+}
+
 requires_nvm(){
-  __load_or_install_nvm
-  __nvm_use_or_install_version
-  __direnv_nvm_use_node
-  __requires_npm_or_yarn
+  _log warn "(.nvmrc detected) 'requires_nvm' no longer needed in .envrc and you may remove it"
 }
 
 __use_yarn(){
   local NOT_INSTALLED=$(which yarn)
   if [ -z "$NOT_INSTALLED" ]; then
-    _log info "Couldn't find yarn..."
+    _log prompt "Couldn't find yarn..."
     read -p "Should I install it via homebrew? " -n 1 -r
     echo    # (optional) move to a new line
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-      _log info "Installing yarn via brew"
+      _log info "Installing yarn via homebrew..."
       brew install yarn
     else
-      log_error "Install yarn and try again"
+      _log error "You'll need to install yarn before you can run the project"
+      _log warn "Visit https://classic.yarnpkg.com/en/docs/install to learn how"
       exit
     fi
   else
@@ -171,11 +270,18 @@ __requires_npm_or_yarn(){
 }
 
 __config_or_init_stencil(){
-  local STENCIL_CONFIG=$(find .stencil)
-  if [ -z "$STENCIL_CONFIG" ]; then
-    stencil init
-  else
+  if [ -f ".stencil" ]; then
     _log success "Good to go, 'stencil start' for local development"
+  else
+    _log prompt "Couldn't find a .stencil config file ..."
+    read -p "Init stencil? " -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      stencil init
+    else
+      log warn "You'll need a .stencil file, check the project's README on how you should obtain a copy"
+      exit
+    fi
   fi
 }
 
@@ -208,16 +314,19 @@ requires_themekit(){
   else
     _log warn "Installing shopify themekit"
     # mac only here, need to detect this instead
-    brew tap shopify/shopify
-    brew install themekit
+    brew tap shopify/shopify && brew install themekit
   fi
 }
 
 requires_meteor(){
+  _log warn "(.meteor folder detected) 'requires_meteor' no longer needed in .envrc and you may remove it."
+}
+
+layout_meteor(){
   if has meteor; then
     if [ ! -d ./node_modules ]; then
       # no node modules... run meteor npm install
-      _log warn "Running npm install"
+      _log warn "Running meteor npm install"
       meteor npm install
     fi
   else
@@ -225,3 +334,53 @@ requires_meteor(){
   fi
   _log success "Good to go, Meteor installed"
 }
+layout_nvm(){
+  __load_or_install_nvm
+  __nvm_use_or_install_version
+  __direnv_nvm_use_node
+  __requires_npm_or_yarn
+}
+
+layout_project(){
+  # if directory has .nvmrc assume nvm/node project
+  if [[ -f ".nvmrc" ]]; then
+    layout_nvm
+  fi
+  # if meteor
+  if [[ -d ".meteor" ]]; then
+    layout_meteor
+  fi
+
+}
+
+main(){
+  local UPDATED=$(__check_for_update)
+  if [ -z "$UPDATED" ]; then
+    layout_project
+  else
+
+ORIG_DIRENV_LOG_FORMAT="${DIRENV_LOG_FORMAT-direnv: %s}"
+DIRENV_LOG_FORMAT="%s"
+cat << "EOF"
+    __         __                                       
+   / /_  ___  / /___  ___  __________                   
+  / __ \/ _ \/ / __ \/ _ \/ ___/ ___/                   
+ / / / /  __/ / /_/ /  __/ /  (__  )                    
+/_/ /_/\___/_/ .___/\___/_/  /____/                     
+            /_/                  __      __           __
+                __  ______  ____/ /___ _/ /____  ____/ /
+               / / / / __ \/ __  / __ `/ __/ _ \/ __  / 
+              / /_/ / /_/ / /_/ / /_/ / /_/  __/ /_/ /  
+              \__,_/ .___/\__,_/\__,_/\__/\___/\__,_(_) 
+                  /_/                                   
+                  
+                          Time to reload your shell!
+
+EOF
+
+DIRENV_LOG_FORMAT=$ORIG_DIRENV_LOG_FORMAT
+    exit
+  fi
+}
+
+main
