@@ -51,3 +51,12 @@ requires_stencil
 requires_themekit
 requires_envkey
 ```
+
+
+## Development
+
+clone the repo and link the helpers manually to the location you cloned the project
+
+Steps to Test self-update
+1. add anything to the .helpers-version file (so they don't match current)
+2. adjust the timestamp/lastupdated time of .helpers-version so the file is older than 24 hours `touch -mt 200801120000 .helpers-version`
