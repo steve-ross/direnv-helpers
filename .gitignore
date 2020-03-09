@@ -21,3 +21,7 @@ default-packages
 npm-shrinkwrap.json
 package-lock.json
 yarn.lock
+# temp file used in development
+direnvhelpers.sh 
+# the version file
+.helpers-version

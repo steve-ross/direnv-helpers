@@ -1,9 +1,12 @@
 # Various helpers for direnv.net (NVM, BigCommerce, Shopify, Meteor)
 ### Handy project setup helpers that can:
 
-- Detect & install NVM
+- Auto updates itself if a new version is detected in github
+- Detect & install yarn
+- Detect misconfigured project (has both yarn.lock and package-lock.json)
+- Auto-Detect & install NVM
 - Detect & install BigCommerce's stencil-cli
-- Detect & install Meteor
+- Auto-Detect & install Meteor
 - Detect & install Shopify's themekit
 - Detect & install EnvKey (and call envkey-source)
 - Node / NVM specific helpers
@@ -40,17 +43,20 @@ echo "8.8.1" >> .nvmrc
 
 Next: Create a `.envrc` file
 
-```
-echo "requires_nvm" >> .envrc
-```
-
 Direnv should prompt you to allow the script to run and voila!
 
 ## Helpers to use in your `.envrc`
 ```
-requires_nvm
 requires_stencil
 requires_themekit
-requires_meteor
 requires_envkey
 ```
+
+
+## Development
+
+clone the repo and link the helpers manually to the location you cloned the project
+
+Steps to Test self-update
+1. add anything to the .helpers-version file (so they don't match current)
+2. adjust the timestamp/lastupdated time of .helpers-version so the file is older than 24 hours `touch -mt 200801120000 .helpers-version`
