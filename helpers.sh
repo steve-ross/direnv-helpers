@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 # Release Notes 
+#   Version 0.2.0 
+#     - auto detect shopify, bigcommerce, envkey
+#     - automatically download stencil file from EnvKey if we find the variable $STENCIL_FILE
+#     - depricate old helpers: requires_stencil, requires_themekit, requires_envkey
 #   Version 0.1.0
 #     - check for updates and download when a new release is available
 #       - writes version string to .helpers-version in the same directory as helpers.sh
@@ -269,55 +273,62 @@ __requires_npm_or_yarn(){
   fi
 }
 
-__config_or_init_stencil(){
-  if [ -f ".stencil" ]; then
-    _log success "Good to go, 'stencil start' for local development"
-  else
-    _log prompt "Couldn't find a .stencil config file ..."
-    read -p "Init stencil? " -n 1 -r
-    echo    # (optional) move to a new line
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      stencil init
-    else
-      log warn "You'll need a .stencil file, check the project's README on how you should obtain a copy"
-      exit
-    fi
-  fi
+requires_stencil(){
+  _log warn "(package.json -> @bigcommerce/stencil-cli now detected) 'requires_stencil' no longer needed in .envrc and you may remove it."
 }
 
-requires_stencil(){
-  if has stencil; then
-    __config_or_init_stencil
-  else
+layout_stencil(){
+  # if cli is installed
+  if ! has stencil; then
     _log warn "Installing stencil cli"
     npm install -g @bigcommerce/stencil-cli
   fi
+  if [[ ! -f ".stencil" ]]; then
+    # see if we have an environment variable w/the stencil config
+    if [[ ! -z "$STENCIL_FILE" ]];then
+     echo -n "$STENCIL_FILE" > .stencil
+     _log success ".stencil written via Environment variable"
+    else
+    _log prompt "Couldn't find a .stencil config file ..."
+      read -p "Init stencil? " -n 1 -r
+      echo    # (optional) move to a new line
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        stencil init
+      else
+      _log warn "You'll need a .stencil file, check the project's README on how you should obtain a copy"
+        exit
+      fi
+    fi
+  fi
+
   
 }
 
-requires_envkey(){
-  if has envkey-source; then
-    _log warn "Found envkey... trying to source .env"
-    eval $(envkey-source)
-    _log success "EnvKey Loaded"
-  else
+layout_envkey(){
+  if ! has envkey-source; then
     _log warn "Installing EnvKey cli"
     curl -s https://raw.githubusercontent.com/envkey/envkey-source/master/install.sh | bash
-    eval $(envkey-source)
   fi
+  _log "Using EnvKey"
+  eval "$(envkey-source)"
   
 }
 
-requires_themekit(){
-  if has theme; then
-    _log success "Found shopify themekit"
-  else
+layout_shopify(){
+  if ! has theme; then
     _log warn "Installing shopify themekit"
     # mac only here, need to detect this instead
     brew tap shopify/shopify && brew install themekit
   fi
+  _log "Using Shopify Themekit"
 }
 
+requires_themekit(){
+  _log warn "(Shopify now detected) 'requires_themekit' no longer needed in .envrc and you may remove it."
+}
+requires_envkey(){
+  _log warn "(Envkey now detected) 'requires_envkey' no longer needed in .envrc and you may remove it."
+}
 requires_meteor(){
   _log warn "(.meteor folder detected) 'requires_meteor' no longer needed in .envrc and you may remove it."
 }
@@ -342,13 +353,30 @@ layout_nvm(){
 }
 
 layout_project(){
-  # if directory has .nvmrc assume nvm/node project
-  if [[ -f ".nvmrc" ]]; then
-    layout_nvm
+  # detect envkey
+  if [[ -f ".env" && (! -z "$(grep -Fs "ENVKEY=" .env)" || ! -z "$ENVKEY")]]; then
+    layout_envkey
   fi
-  # if meteor
-  if [[ -d ".meteor" ]]; then
-    layout_meteor
+
+  # if we have a package json do some node project detection 
+  if [[ -f "package.json" ]]; then
+    # if directory has .nvmrc assume nvm/node project
+    if [[ -f ".nvmrc" ]]; then
+      layout_nvm
+    fi
+    # look for bigcommerce stencil-cli if we don't have a .stencil file
+    if [[ -f ".stencil" || ! -z "$(grep -Fs "@bigcommerce/stencil-cli" ./package.json)" ]]; then
+      layout_stencil
+    fi
+    # if meteor
+    if [[ -d ".meteor" ]]; then
+      layout_meteor
+    fi
+  fi
+  
+  # detect shopify themekit
+  if [[ -f "config.yml" && ! -z "$(grep -Fs "theme_id:" config.yml)" ]]; then
+    layout_shopify
   fi
 
 }

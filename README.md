@@ -5,10 +5,10 @@
 - Detect & install yarn
 - Detect misconfigured project (has both yarn.lock and package-lock.json)
 - Auto-Detect & install NVM
-- Detect & install BigCommerce's stencil-cli
+- Auto-Detect & install BigCommerce's stencil-cli
 - Auto-Detect & install Meteor
-- Detect & install Shopify's themekit
-- Detect & install EnvKey (and call envkey-source)
+- Auto-Detect & install Shopify's themekit
+- Auto-Detect & install EnvKey (and call envkey-source)
 - Node / NVM specific helpers
   - Use the node version required by your project (if missing, install it with NVM)
   - Run npm install if you are missing a `node_modules`
@@ -45,11 +45,16 @@ Next: Create a `.envrc` file
 
 Direnv should prompt you to allow the script to run and voila!
 
-## Helpers to use in your `.envrc`
+## Auto-detect your project layout - all you need is a .envrc (it can be empty even!)
+ 
+```bash
+# .envrc
+dotenv
 ```
-requires_stencil
-requires_themekit
-requires_envkey
+
+```bash
+# .env
+ENVKEY=my_super_cool_key
 ```
 
 
