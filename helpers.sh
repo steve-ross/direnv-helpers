@@ -149,7 +149,11 @@ _log() {
 function comparedate() {
   local MAXAGE=$(bc <<< '24*60*60') # seconds in 24 hours
   # file age in seconds = current_time - file_modification_time.
-  local FILEAGE=$(($(date +%s) - $(stat -f '%m' "$1")))
+  if [ $(uname -s) == "Darwin" ]; then
+    local FILEAGE=$(($(date +%s) - $(stat -f '%m' "$1")))
+  else
+    local FILEAGE=$(($(date +%s) - $(stat -c '%Y' "$1")))
+  fi
   test $FILEAGE -gt $MAXAGE && {
       echo "Time to check for an update..."
   }
