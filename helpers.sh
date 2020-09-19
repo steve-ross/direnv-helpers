@@ -253,6 +253,7 @@ __use_yarn(){
     fi
   else
     if [ ! -d ./node_modules ]; then
+      _log warn "Installing packages"
       # no node modules... install via yarn
       yarn
     fi
@@ -271,6 +272,7 @@ __requires_npm_or_yarn(){
     else
       if [ ! -d ./node_modules ]; then
         # no node modules... run npm install
+        _log warn "Installing packages"
         npm install
       fi
     fi
