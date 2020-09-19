@@ -1,29 +1,5 @@
 #!/usr/bin/env bash
 
-# Release Notes 
-#   Version 0.2.0 
-#     - auto detect shopify, bigcommerce, envkey
-#     - automatically download stencil file from EnvKey if we find the variable $STENCIL_FILE
-#     - depricate old helpers: requires_stencil, requires_themekit, requires_envkey
-#   Version 0.1.0
-#     - check for updates and download when a new release is available
-#       - writes version string to .helpers-version in the same directory as helpers.sh
-#       - only check for a new version every 24h
-#     - added auto=detecting project types
-#         - look for .nvmrc and assume project is using nvm
-#         - look for .meteor directory and assume project is using meteor
-#     - don't call nvm use since direnv is loading node
-#     - abandon using log_error... just call _log error "something bad happened..."
-#   Version 0.0.4 
-#     - detect yarn.lock vs package-lock.json and install yarn if needed
-#   Version 0.0.3 
-#     - bugfix for when .nvmrc contains a release name ie: 'lts/dubnium'
-#   Version 0.0.2 
-#     - don't assume 'layout node' when using node
-#   Version 0.0.1 
-#     - Initial release
-
-
 REPO_URL="https://api.github.com/repos/steve-ross/direnv-helpers/releases/latest"
 
 __prompt_install_nvm(){
@@ -149,7 +125,11 @@ _log() {
 function comparedate() {
   local MAXAGE=$(bc <<< '24*60*60') # seconds in 24 hours
   # file age in seconds = current_time - file_modification_time.
-  local FILEAGE=$(($(date +%s) - $(stat -f '%m' "$1")))
+  if [ $(uname -s) == "Darwin" ]; then
+    local FILEAGE=$(($(date +%s) - $(stat -f '%m' "$1")))
+  else
+    local FILEAGE=$(($(date +%s) - $(stat -c '%Y' "$1")))
+  fi
   test $FILEAGE -gt $MAXAGE && {
       echo "Time to check for an update..."
   }
@@ -249,6 +229,7 @@ __use_yarn(){
     fi
   else
     if [ ! -d ./node_modules ]; then
+      _log warn "Installing packages"
       # no node modules... install via yarn
       yarn
     fi
@@ -267,6 +248,7 @@ __requires_npm_or_yarn(){
     else
       if [ ! -d ./node_modules ]; then
         # no node modules... run npm install
+        _log warn "Installing packages"
         npm install
       fi
     fi
@@ -360,6 +342,19 @@ layout_project(){
 
   # if we have a package json do some node project detection 
   if [[ -f "package.json" ]]; then
+    # set some env vars that might be useful
+    # package version
+    export NPM_PACKAGE_VERSION=$(cat package.json \
+      | grep version \
+      | head -1 \
+      | awk -F: '{ print $2 }' \
+      | sed 's/[",]//g')
+    # package name
+    export NPM_PACKAGE_NAME=$(cat package.json \
+      | grep name \
+      | head -1 \
+      | awk -F: '{ print $2 }' \
+      | sed 's/[",]//g')
     # if directory has .nvmrc assume nvm/node project
     if [[ -f ".nvmrc" ]]; then
       layout_nvm
