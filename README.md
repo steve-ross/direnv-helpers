@@ -65,3 +65,30 @@ clone the repo and link the helpers manually to the location you cloned the proj
 Steps to Test self-update
 1. add anything to the .helpers-version file (so they don't match current)
 2. adjust the timestamp/lastupdated time of .helpers-version so the file is older than 24 hours `touch -mt 200801120000 .helpers-version`
+
+### Change Log / Release Notes
+
+- Version 0.3.0 
+  - Export NPM_PACKAGE_NAME NPM_PACKAGE_VERSION
+  - Date Detect - Handle non-mac environments (Thx for the PR!) 
+- Version 0.2.0 
+  - auto detect shopify, bigcommerce, envkey
+  - automatically download stencil file from EnvKey if we find the variable $STENCIL_FILE
+  - depricate old helpers: requires_stencil, requires_themekit, requires_envkey
+- Version 0.1.0
+  - check for updates and download when a new release is available
+    - writes version string to .helpers-version in the same directory as helpers.sh
+    - only check for a new version every 24h
+  - added auto=detecting project types
+     - look for .nvmrc and assume project is using nvm
+     - look for .meteor directory and assume project is using meteor
+  - don't call nvm use since direnv is loading node
+  - abandon using log_error... just call _log error "something bad happened..."
+- Version 0.0.4 
+  - detect yarn.lock vs package-lock.json and install yarn if needed
+- Version 0.0.3 
+  - bugfix for when .nvmrc contains a release name ie: 'lts/dubnium'
+- Version 0.0.2 
+  - don't assume 'layout node' when using node
+- Version 0.0.1 
+  - Initial release
