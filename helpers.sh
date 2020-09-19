@@ -348,13 +348,13 @@ layout_project(){
       | grep version \
       | head -1 \
       | awk -F: '{ print $2 }' \
-      | sed 's/[",]//g')
+      | sed 's/[ ",\t\r\n]//g'  )
     # package name
     export NPM_PACKAGE_NAME=$(cat package.json \
       | grep name \
       | head -1 \
       | awk -F: '{ print $2 }' \
-      | sed 's/[",]//g')
+      | sed 's/[ ",\t\r\n]//g'  )
     # if directory has .nvmrc assume nvm/node project
     if [[ -f ".nvmrc" ]]; then
       layout_nvm

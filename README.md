@@ -68,6 +68,8 @@ Steps to Test self-update
 
 ### Change Log / Release Notes
 
+- Version 0.3.1
+  - Fix whitespace in NPM Environment Variables
 - Version 0.3.0 
   - Export NPM_PACKAGE_NAME NPM_PACKAGE_VERSION
   - Date Detect - Handle non-mac environments (Thx for the PR!) 
