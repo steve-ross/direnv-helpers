@@ -366,6 +366,19 @@ layout_project(){
 
   # if we have a package json do some node project detection 
   if [[ -f "package.json" ]]; then
+    # set some env vars that might be useful
+    # package version
+    export NPM_VERSION=$(cat package.json \
+      | grep version \
+      | head -1 \
+      | awk -F: '{ print $2 }' \
+      | sed 's/[",]//g')
+    # package name
+    export NPM_PACKAGE_NAME=$(cat package.json \
+      | grep name \
+      | head -1 \
+      | awk -F: '{ print $2 }' \
+      | sed 's/[",]//g')
     # if directory has .nvmrc assume nvm/node project
     if [[ -f ".nvmrc" ]]; then
       layout_nvm
