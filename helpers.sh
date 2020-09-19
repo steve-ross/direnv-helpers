@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 # Release Notes 
+#   Version 0.3.0 
+#     - Export NPM_PACKAGE_NAME NPM_PACKAGE_VERSION
 #   Version 0.2.0 
 #     - auto detect shopify, bigcommerce, envkey
 #     - automatically download stencil file from EnvKey if we find the variable $STENCIL_FILE
@@ -368,7 +370,7 @@ layout_project(){
   if [[ -f "package.json" ]]; then
     # set some env vars that might be useful
     # package version
-    export NPM_VERSION=$(cat package.json \
+    export NPM_PACKAGE_VERSION=$(cat package.json \
       | grep version \
       | head -1 \
       | awk -F: '{ print $2 }' \
