@@ -68,6 +68,8 @@ Steps to Test self-update
 
 ### Change Log / Release Notes
 
+- Version 0.3.2
+  - Better BigCommerce Detection (detect stencil-utils package)
 - Version 0.3.1
   - Fix whitespace in NPM Environment Variables
 - Version 0.3.0 
