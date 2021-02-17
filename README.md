@@ -68,6 +68,9 @@ Steps to Test self-update
 
 ### Change Log / Release Notes
 
+- Version 0.3.3 (Hotfix)
+  - Hotfix to write newer stencil config files for BigCommerce
+    - New variables $CONFIG_STENCIL_JSON and $SECRETS_STENCIL_JSON 
 - Version 0.3.2
   - Better BigCommerce Detection (detect stencil-utils package)
 - Version 0.3.1

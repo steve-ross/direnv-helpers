@@ -265,19 +265,23 @@ layout_stencil(){
     _log warn "Installing stencil cli"
     npm install -g @bigcommerce/stencil-cli
   fi
-  if [[ ! -f ".stencil" ]]; then
+  if [[ ! -f "config.stencil.json" && ! -f "secrets.stencil.json" ]]; then
     # see if we have an environment variable w/the stencil config
-    if [[ ! -z "$STENCIL_FILE" ]];then
-     echo -n "$STENCIL_FILE" > .stencil
-     _log success ".stencil written via Environment variable"
+    if [[ ! -z "$CONFIG_STENCIL_JSON" ]];then
+     echo -n "$CONFIG_STENCIL_JSON" > config.stencil.json
+     _log success "config.stencil.json written via Environment variable"
+      if [[ ! -z "$SECRETS_STENCIL_JSON" ]];then
+        echo -n "$SECRETS_STENCIL_JSON" > secrets.stencil.json
+       _log success "secrets.stencil.json written via Environment variable"
+      fi
     else
-    _log prompt "Couldn't find a .stencil config file ..."
+    _log prompt "Couldn't find a config.stencil.json config file ..."
       read -p "Init stencil? " -n 1 -r
       echo    # (optional) move to a new line
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         stencil init
       else
-      _log warn "You'll need a .stencil file, check the project's README on how you should obtain a copy"
+      _log warn "You'll need a config.stencil.json and a secrets.stencil.json file, check the project's README on how you should obtain a copy"
         exit
       fi
     fi
