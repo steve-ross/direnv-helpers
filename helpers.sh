@@ -360,7 +360,7 @@ layout_project(){
       layout_nvm
     fi
     # look for bigcommerce stencil-cli if we don't have a .stencil file
-    if [[ -f ".stencil" || ! -z "$(grep -Fs "@bigcommerce/stencil-cli" ./package.json)" ]]; then
+    if [[ -f ".stencil" || ! -z "$(grep -Fs "@bigcommerce/stencil-cli" ./package.json)" || ! -z "$(grep -Fs "@bigcommerce/stencil-utils" ./package.json)" ]]; then
       layout_stencil
     fi
     # if meteor
