@@ -16,16 +16,26 @@
 
 
 ## Installation
+### Prerequisite: install direnv
+```
+brew install direnv
+```
+
+### Download and link the helpers (one liner)
 
 ```
-# one liner
 curl -o ~/.config/direnv/helpers.sh --create-dirs https://raw.githubusercontent.com/steve-ross/direnv-helpers/master/helpers.sh && echo -n "source ~/.config/direnv/helpers.sh" >> ~/.config/direnv/direnvrc
+```
 
-# OR...
-# download the script
+## Installation (steps)
+1. Download the script
+
+```
 curl -o ~/.config/direnv/helpers.sh --create-dirs https://raw.githubusercontent.com/steve-ross/direnv-helpers/master/helpers.sh
+```
 
-# source it in your ~/.config/direnv/direnvrc
+2. Source it in your ~/.config/direnv/direnvrc
+```
 echo -n "source ~/.config/direnv/helpers.sh >> ~/.config/direnv/direnvrc
 ```
 
