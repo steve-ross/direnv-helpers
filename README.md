@@ -36,7 +36,7 @@ curl -o ~/.config/direnv/helpers.sh --create-dirs https://raw.githubusercontent.
 
 2. Source it in your ~/.config/direnv/direnvrc
 ```
-echo -n "source ~/.config/direnv/helpers.sh >> ~/.config/direnv/direnvrc
+echo -n "source ~/.config/direnv/helpers.sh" >> ~/.config/direnv/direnvrc
 ```
 
 ## How to use the helpers in your projects (NVM example)
